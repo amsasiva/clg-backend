@@ -59,8 +59,8 @@ app.get("/schemes", async (req, res) => {
 //   let i = 1;
 
 //   if (age) {
-//     query += ` AND $${i}::int BETWEEN 
-//                   CAST(SPLIT_PART(age, '-', 1) AS INT) AND 
+//     query += ` AND $${i}::int BETWEEN
+//                   CAST(SPLIT_PART(age, '-', 1) AS INT) AND
 //                   CAST(SPLIT_PART(age, '-', 2) AS INT)`;
 //     params.push(age);
 //     i++;
@@ -111,13 +111,13 @@ app.get("/schemes", async (req, res) => {
 
 app.get("/dynamicschemes", async (req, res) => {
   // Extract filter parameters
-  const { 
-    age, 
-    gender, 
-    caste, 
-    occupation, 
-    residence, 
-    application_mode, 
+  const {
+    age,
+    gender,
+    caste,
+    occupation,
+    residence,
+    application_mode,
     scheme_category,
     differently_abled,
     benefit_type,
@@ -127,17 +127,18 @@ app.get("/dynamicschemes", async (req, res) => {
     minority,
     employment_status,
     page = 1,
-    limit = 10 
+    limit = 10,
   } = req.query;
 
   // Convert page and limit to integers
   const pageNum = parseInt(page, 10);
   const limitNum = parseInt(limit, 10);
-  
+
   // Validate pagination parameters
   if (isNaN(pageNum) || isNaN(limitNum) || pageNum < 1 || limitNum < 1) {
-    return res.status(400).json({ 
-      error: "Invalid pagination parameters. Page and limit must be positive integers." 
+    return res.status(400).json({
+      error:
+        "Invalid pagination parameters. Page and limit must be positive integers.",
     });
   }
 
@@ -147,64 +148,33 @@ app.get("/dynamicschemes", async (req, res) => {
   // Build the base query
   let countQuery = "SELECT COUNT(*) FROM Schemes WHERE 1=1";
   let dataQuery = "SELECT * FROM Schemes WHERE 1=1";
-  const params = [];
+  let params = [];
   let i = 1;
 
   // Add filter conditions
-  // if (age) {
-  //   try {
-  //     // Make sure age is numeric before proceeding
-  //     if (!isNaN(parseInt(age))) {
-  //       // Use a safer approach that doesn't rely on casting the query parameter
-  //       // Instead, split and parse the values here in JavaScript
-  //       const ageRangeInDB = `
-  //         (CASE 
-  //           WHEN age ~ '^[0-9]+-[0-9]+$' THEN 
-  //             CAST(SPLIT_PART(age, '-', 1) AS INT) 
-  //           ELSE 0 
-  //         END) <= $${i} 
-  //         AND 
-  //         (CASE 
-  //           WHEN age ~ '^[0-9]+-[0-9]+$' THEN 
-  //             CAST(SPLIT_PART(age, '-', 2) AS INT) 
-  //           ELSE 200 
-  //         END) >= $${i}`;
-        
-  //       countQuery += ` AND (${ageRangeInDB})`;
-  //       dataQuery += ` AND (${ageRangeInDB})`;
-  //       params.push(parseInt(age));
-  //       i++;
-  //     } else {
-  //       console.warn(`Skipping invalid age filter value: ${age}`);
-  //     }
-  //   } catch (error) {
-  //     console.warn(`Error processing age filter: ${error.message}`);
-  //     // Skip this filter if there's an error
-  //   }
-  // }
-// ✅ AGE RANGE HANDLING: like "18-30"
-if (age) {
-  const match = age.match(/^(\d+)-(\d+)$/);
-  if (match) {
-    const reqMin = parseInt(match[1]);
-    const reqMax = parseInt(match[2]);
+  // ✅ AGE RANGE HANDLING: like "18-30"
+  if (age) {
+    const match = age.match(/^(\d+)-(\d+)$/);
+    if (match) {
+      const reqMin = parseInt(match[1]);
+      const reqMax = parseInt(match[2]);
 
-    // Overlap condition: db_min <= reqMax AND reqMin <= db_max
-    const ageCondition = `
+      // Overlap condition: db_min <= reqMax AND reqMin <= db_max
+      const ageCondition = `
       AND (
         CAST(SPLIT_PART(age, '-', 1) AS INT) <= $${i} 
         AND 
         CAST(SPLIT_PART(age, '-', 2) AS INT) >= $${i + 1}
       )
     `;
-    countQuery += ageCondition;
-    dataQuery += ageCondition;
-    params.push(reqMax, reqMin);
-    i += 2;
-  } else {
-    console.warn(`Invalid age range format: ${age}`);
+      countQuery += ageCondition;
+      dataQuery += ageCondition;
+      params.push(reqMax, reqMin);
+      i += 2;
+    } else {
+      console.warn(`Invalid age range format: ${age}`);
+    }
   }
-}
   if (gender) {
     // Check if the value is "all" to return all genders
     if (gender.toLowerCase() === "all") {
@@ -260,10 +230,13 @@ if (age) {
       i++;
     }
   }
-  
+
   if (application_mode) {
     // Check if the value is "all" or similar to return both offline and online schemes
-    if (application_mode.toLowerCase() === "all" || application_mode.toLowerCase() === "common") {
+    if (
+      application_mode.toLowerCase() === "all" ||
+      application_mode.toLowerCase() === "common"
+    ) {
       // No filter needed for "all" - it will return both offline and online schemes
     } else {
       try {
@@ -273,7 +246,9 @@ if (age) {
         params.push(application_mode);
         i++;
       } catch (error) {
-        console.warn(`Error processing application_mode filter: ${error.message}`);
+        console.warn(
+          `Error processing application_mode filter: ${error.message}`
+        );
       }
     }
   }
@@ -292,7 +267,9 @@ if (age) {
         params.push(differently_abled);
         i++;
       } catch (error) {
-        console.warn(`Error processing differently_abled filter: ${error.message}`);
+        console.warn(
+          `Error processing differently_abled filter: ${error.message}`
+        );
       }
     }
   }
@@ -330,7 +307,9 @@ if (age) {
         params.push(government_employee);
         i++;
       } catch (error) {
-        console.warn(`Error processing government_employee filter: ${error.message}`);
+        console.warn(
+          `Error processing government_employee filter: ${error.message}`
+        );
       }
     }
   }
@@ -349,7 +328,9 @@ if (age) {
         params.push(marital_status);
         i++;
       } catch (error) {
-        console.warn(`Error processing marital_status filter: ${error.message}`);
+        console.warn(
+          `Error processing marital_status filter: ${error.message}`
+        );
       }
     }
   }
@@ -406,7 +387,9 @@ if (age) {
         params.push(employment_status);
         i++;
       } catch (error) {
-        console.warn(`Error processing employment_status filter: ${error.message}`);
+        console.warn(
+          `Error processing employment_status filter: ${error.message}`
+        );
       }
     }
   }
@@ -417,21 +400,33 @@ if (age) {
       // No filter needed for "all"
     } else {
       try {
-        const condition = ` AND $${i} = ANY(scheme_category)`;
+        // const condition = ` AND $${i} = ANY(scheme_category)`; // ✅ Corrected
+        // countQuery += condition;
+        // dataQuery += condition;
+        // params.push(scheme_category.toLowerCase());
+        // i++;
+        const categoriesArray = decodeURIComponent(scheme_category)
+          .split(",")
+          .map((cat) => cat.trim());
+
+        const condition = ` AND scheme_category && $${i}::text[]`;
         countQuery += condition;
         dataQuery += condition;
-        params.push(scheme_category);
+        params.push(categoriesArray);
         i++;
       } catch (error) {
-        console.warn(`Error processing scheme_category filter: ${error.message}`);
+        console.warn(
+          `Error processing scheme_category filter: ${error.message}`
+        );
       }
     }
   }
-  
-  // Add pagination to data query only
-  dataQuery += ` ORDER BY scheme_id LIMIT $${i} OFFSET $${i+1}`;
-  const dataParams = [...params, limitNum, offset];
 
+  // Add pagination to data query only
+  dataQuery += ` ORDER BY scheme_id LIMIT $${i} OFFSET $${i + 1}`;
+  const dataParams = [...params, limitNum, offset];
+  console.log("dataQuery", dataQuery);
+  console.log("dataParams", dataParams);
   try {
     // Execute count query first to get total items
     const countResult = await pool.query(countQuery, params);
@@ -440,21 +435,20 @@ if (age) {
 
     // Execute data query with pagination
     const dataResult = await pool.query(dataQuery, dataParams);
-    
+
     // Return paginated response
     res.json({
       currentPage: pageNum,
       totalPages: totalPages,
       totalItems: totalItems,
       itemsPerPage: limitNum,
-      schemes: dataResult.rows
+      schemes: dataResult.rows,
     });
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
-
 
 // Signup API (by Username)
 app.post("/signup", async (req, res) => {
